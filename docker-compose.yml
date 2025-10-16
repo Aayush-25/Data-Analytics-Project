@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: etl_demo
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    ports:
+      - "5432:5432"
+  etl:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/etl_demo
+    depends_on:
+      - db
+    volumes:
+      - ./:/app
+  dashboard:
+    build: .
+    command: ["streamlit", "run", "src/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/etl_demo
+    depends_on:
+      - db
+    ports:
+      - "8501:8501"
+volumes:
+  pgdata:
